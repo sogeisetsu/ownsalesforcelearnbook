@@ -60,3 +60,11 @@ public class OlderAccountsUtility {
 
 ## 开始使用Apex
 
+### Apex 代码存储在哪里？
+
+代码存储在文件中。这些文件可以在本地（在您的 PC 或 Mac 上）、在云中（您的 Salesforce 组织），或者它们可以保存在本地并自动同步到云中。
+
+开发者控制台（Developer Console）是开发者用来创建和编辑代码文件的工具，在trailhead的教程中使用Developer Console在 Salesforce 组织（org）中存储和执行（运行）代码。
+
+打开Developer Console的方法是👉打开org，Click the **setup gear** ![Gear icon to access Setup in Lightning Experience.](https://res.cloudinary.com/hy4kyit2a/f_auto,fl_lossy,q_70/learn/projects/quickstart-apex/quickstart-apex-1/images/8edeaa88035e90a5b5390fea7536fe3d_image-1.png) and select **Developer Console**.
+
