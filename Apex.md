@@ -134,6 +134,80 @@ System.debug('The variable numberOfSpoons is: ' + numberOfSpoons);
 
 ## 集合
 
+集合是一种可以存储多个项的变量类型。
+
+![](https://suyuesheng-biaozhun-blog-tupian.oss-cn-qingdao.aliyuncs.com/blogimg/20220329093539.png)
+
+
+
+Apex 集合分为三种类型（list, set, and map）
+
+### List
+
+Apex 列表是一组有序的相同类型的项目。
+
+声明类表的方式如下：
+
+![](https://suyuesheng-biaozhun-blog-tupian.oss-cn-qingdao.aliyuncs.com/blogimg/20220329093848.png)
+
+1. 声明一个空列表
+
+   ```apex
+   //Declare the groceries list
+   List<String> groceries = new List<String>();
+     
+   //The output for this statement is an empty list, ().
+   System.debug('Groceries Value: ' + groceries);
+   ```
+
+2. 声明一个数组(可以理解为固定长度的列表)
+
+   ```apex
+   String[] cc = new String[3];
+   System.debug('数组'+cc);
+   ```
+
+   1. 从数组中取值和赋值
+
+      ```apex
+      cc[0]='swd';
+      System.debug(cc[0]);
+      ```
+
+3. 初始化一个List
+
+   1. 初始化一个空List，**并添加值**。`add`方法适用于数组
+
+      ```apex
+      List<String> groceries = new List<String>();
+      groceries.add('Tea');
+      ```
+
+   2. 初始化一个不为空的List
+
+      ```apex
+      //Sets the first item in the list to 'Tea'
+      List<String> groceries = new List<String>{'Tea'}; 
+      ```
+
+   3. 特定索引（位置）中插入item，适用于数组
+
+      ```apex
+      groceries.add(2, 'Milk');
+      ```
+   
+      4.    从List取值
+   
+            ```apex
+            System.debug(groceries[0]);
+            ```
+
+#### 提示
+
+1. 与java不同，apex中数组是List的一种。
+2. apex的数组的长度是可变的，也就是说虽然规定了长度为4，却可以无限使用`add`方法增加。
+3. 与java相同，List的长度是从0开始计算。
+
 
 
 # License
