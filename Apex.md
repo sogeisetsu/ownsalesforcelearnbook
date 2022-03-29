@@ -214,7 +214,77 @@ Apex 列表是一组有序的相同类型的项目。
 2. **apex的数组的长度是可变的，也就是说虽然规定了长度为4，却可以无限使用`add`方法增加。**
 3. 与java相同，List的长度是从0开始计算。
 
+## 控制数据流
 
+### 比较运算符
+
+| Operator | Description              | Syntax           | Result |
+| :------- | :----------------------- | :--------------- | :----- |
+| <        | Less than                | 1 < 2            | TRUE   |
+| <=       | Less than or equal to    | 1 <= 2 3 <= 3    | TRUE   |
+| ==       | Equal to                 | 10 == 10         | TRUE   |
+| != <>    | Not equal to             | 10 != 0 10 <> 11 | TRUE   |
+| >        | Greater than             | 11 > 10          | TRUE   |
+| >=       | Greater than or equal to | 40 >=10 40 >= 40 | TRUE   |
+
+### 逻辑运算符
+
+| **Operator**        | OR                                        | AND                                       |
+| ------------------- | ----------------------------------------- | ----------------------------------------- |
+| **Operator symbol** | \|\|                                      | &&                                        |
+| **Pseudocode**      | If X or Y, do this. Otherwise, do that.   | If X and Y, do this. Otherwise, do that.  |
+| **Apex code**       | `if(X || Y) {//do this} else {//do this}` | `if(X && Y) {//do this} else {//do this}` |
+
+### 条件语句
+
+1. if else
+
+   ```apex
+   String waterLevel = 'full'; /*This variable keeps track of the water level status: full or empty*/
+     
+   if(waterLevel == 'empty') {
+       System.debug('Fill the tea kettle');
+       waterLevel = 'full'; /*Once the tea kettle is filled the variable is changed to full*/
+   } else {
+       System.debug('The tea kettle is full');
+   }
+   ```
+
+2. if-else if
+
+   ```apex
+   String waterLevel = 'half';
+     
+   if(waterLevel == 'empty') {
+       System.debug('Fill the tea kettle');
+       waterLevel = 'full';
+   } else if(waterLevel == 'half') {
+       System.debug('Fill the tea kettle');
+       waterLevel = 'full';
+   } else { /*This statement only runs if line 3 and line 6 result in false.*/
+       System.debug('The tea kettle is full');
+   }
+   ```
+
+3. **Switch** 
+
+   ```apex
+   String waterLevel = 'empty';
+   
+   switch on waterLevel {
+       when 'empty', 'half' { //when waterLevel is either empty or half
+           System.debug('Fill the tea kettle');
+       }
+       when 'full' {
+           System.debug('The tea kettle is full');
+       }
+       when else {
+           System.debug('Error!');
+       }
+   }
+   ```
+
+   
 
 # License
 
