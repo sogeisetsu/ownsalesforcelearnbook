@@ -84,13 +84,13 @@ public class OlderAccountsUtility {
 
 ### 变量
 
-| ata Type           | Description and Example                                      |
-| :----------------- | :----------------------------------------------------------- |
-| Integer            | A positive or negative number that doesn’t have a decimal point.  `Integer num = 12;` |
-| Decimal            | A positive or negative number that has a decimal point.  `Decimal num = 12.22222;` |
-| String             | A series of characters surrounded by single quotes. This can include any text as short as one letter to sentences.  `String whatAmI = 'A String';` |
-| Boolean            | Typically either true or false. In Apex, null (empty) is also a valid value. Boolean is commonly used with checkboxes.  `Boolean doSomething = False;` |
-| ID (Salesforce ID) | Any valid 18-character Salesforce record ID.  `Id contactId = '00300000003T2PGAA0';` |
+| ata Type             | Description and Example                                      |
+| :------------------- | :----------------------------------------------------------- |
+| `Integer`            | A positive or negative number that doesn’t have a decimal point.  `Integer num = 12;` |
+| `Decimal`            | A positive or negative number that has a decimal point.  `Decimal num = 12.22222;` |
+| `String`             | A series of characters surrounded by single quotes. This can include any text as short as one letter to sentences.  `String whatAmI = 'A String';` |
+| `Boolean`            | Typically either true or false. In Apex, null (empty) is also a valid value. Boolean is commonly used with checkboxes.  `Boolean doSomething = False;` |
+| `Id` (Salesforce ID) | Any valid 18-character Salesforce record ID.  `Id contactId = '00300000003T2PGAA0';` |
 
 Apex 是一种强类型语言，这意味着每次您声明（创建）一个变量时，您都需要设置它的数据类型、名称以及可选的初始值。
 
@@ -131,6 +131,8 @@ System.debug('The variable numberOfSpoons is: ' + numberOfSpoons);
    Integer sugarCount = 2;
    Boolean needsSugar = false;
    ```
+
+## 集合
 
 
 
