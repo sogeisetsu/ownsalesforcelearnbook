@@ -174,6 +174,12 @@ Apex 列表是一组有序的相同类型的项目。
       System.debug(cc[0]);
       ```
 
+   2. 声明一个初始化的数组
+
+      ```apex
+      String[] strArr =new String[]{'张三','李四','王二麻'};
+      ```
+
 3. 初始化一个List
 
    1. 初始化一个空List，**并添加值**。`add`方法适用于数组
@@ -195,17 +201,17 @@ Apex 列表是一组有序的相同类型的项目。
       ```apex
       groceries.add(2, 'Milk');
       ```
-   
+
       4.    从List取值
-   
+
             ```apex
             System.debug(groceries[0]);
             ```
 
 #### 提示
 
-1. 与java不同，apex中数组是List的一种。
-2. apex的数组的长度是可变的，也就是说虽然规定了长度为4，却可以无限使用`add`方法增加。
+1. 与java不同，**apex中数组是List的一种**。
+2. **apex的数组的长度是可变的，也就是说虽然规定了长度为4，却可以无限使用`add`方法增加。**
 3. 与java相同，List的长度是从0开始计算。
 
 
