@@ -82,6 +82,56 @@ public class OlderAccountsUtility {
 
 ## Apex基础
 
+### 变量
+
+| ata Type           | Description and Example                                      |
+| :----------------- | :----------------------------------------------------------- |
+| Integer            | A positive or negative number that doesn’t have a decimal point.  `Integer num = 12;` |
+| Decimal            | A positive or negative number that has a decimal point.  `Decimal num = 12.22222;` |
+| String             | A series of characters surrounded by single quotes. This can include any text as short as one letter to sentences.  `String whatAmI = 'A String';` |
+| Boolean            | Typically either true or false. In Apex, null (empty) is also a valid value. Boolean is commonly used with checkboxes.  `Boolean doSomething = False;` |
+| ID (Salesforce ID) | Any valid 18-character Salesforce record ID.  `Id contactId = '00300000003T2PGAA0';` |
+
+Apex 是一种强类型语言，这意味着每次您声明（创建）一个变量时，您都需要设置它的数据类型、名称以及可选的初始值。
+
+初始化变量（为其分配初始值）时，您分配的值必须与变量的数据类型匹配。**如果您选择不在变量声明语句中赋值，则变量的值为空。**
+
+![](https://suyuesheng-biaozhun-blog-tupian.oss-cn-qingdao.aliyuncs.com/blogimg/20220329092245.png)
+
+![](https://suyuesheng-biaozhun-blog-tupian.oss-cn-qingdao.aliyuncs.com/blogimg/20220329092309.png)
+
+System.debug 在调试日志中显示其括号的内容。**类似于java的打印。**
+
+### System.debug
+
+System.debug 在调试日志中显示其括号的内容。**类似于java的打印。**
+
+```apex
+Integer numberOfSpoons;
+System.debug('The variable numberOfSpoons is: ' + numberOfSpoons);
+  
+numberOfSpoons = 1;
+System.debug('The variable numberOfSpoons is: ' + numberOfSpoons);
+```
+
+结果：
+
+![](https://suyuesheng-biaozhun-blog-tupian.oss-cn-qingdao.aliyuncs.com/blogimg/20220329092622.png)
+
+### 基本语法
+
+**排列文本和标点以创建编程语言的方式称为语法。**
+
+1.  Apex 语句以分号`;`结尾。
+
+2. Apex 字符串使用单引号将文字文本与周围的代码分开。
+
+   ```apex
+   String whatTimeIsIt = 'It is Tea Time!';
+   Integer sugarCount = 2;
+   Boolean needsSugar = false;
+   ```
+
 
 
 # License
