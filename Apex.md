@@ -68,6 +68,18 @@ public class OlderAccountsUtility {
 
 打开Developer Console的方法是👉打开org，Click the **setup gear** ![Gear icon to access Setup in Lightning Experience.](https://res.cloudinary.com/hy4kyit2a/f_auto,fl_lossy,q_70/learn/projects/quickstart-apex/quickstart-apex-1/images/8edeaa88035e90a5b5390fea7536fe3d_image-1.png) and select **Developer Console**.
 
+## 注释
+
+如同java一样
+
+```apex
+/*
+	多行注释
+*/
+
+// 单行注释
+```
+
 # License
 
 本文已将所有引用其他文章之内容清楚明白地标注，其他部分皆为作者劳动成果。对作者劳动成果做以下声明：
@@ -77,3 +89,4 @@ copyright © 2021 苏月晟，版权所有。
 [![知识共享许可协议](https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png)](http://creativecommons.org/licenses/by-nc-sa/4.0/)
 本作品由苏月晟采用[知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议](http://creativecommons.org/licenses/by-nc-sa/4.0/)进行许可。不可以商业目的转载和引用此文章，在非商业转载时请注明来源和作者信息，并采用相同的许可协议。如需商业转载需联系作者并取得作者本人同意。
 
+``
