@@ -517,7 +517,9 @@ update queriedContact.Account;
 
 `Delete` 操作支持级联删除。在每条子记录都允许删除的情况下删除父对象，其子对象也会自动删除。
 
-## SOQL
+## SOQL（未完）
+
+[编写 SOQL 查询 单元 | Salesforce Trailhead](https://trailhead.salesforce.com/zh-CN/content/learn/modules/apex_database/apex_database_soql)
 
 从数据库中检索记录以获取其字段，包括 ID 字段，**但这不能通过 DML 来完成。需要使用 SOQL 编写查询语句**。
 
@@ -529,7 +531,137 @@ SOQL与常规的mysql基本一致。
 
 字符串比较不区分大小写。
 
-## SOSL
+## SOSL（未完）
+
+Salesforce 对象搜索语言 (SOSL) 是一种 Salesforce 搜索语言，用于在记录中执行文本搜索。使用 SOSL 在 Salesforce 中跨多个标准和自定义对象记录搜索字段。SOSL 类似于 Apache Lucene。
+
+另一个区别是 SOSL 基于单词匹配的方式来匹配字段，而默认情况下即便不使用通配符，SOQL 仍然执行精确匹配。例如，在 SOSL 中搜索 "Digital" 会返回字段值为 "Digital" 或 "The Digital Company" 的记录，但 SOQL 只返回字段值为 "Digital" 的记录。
+
+SOQL 和 SOSL 是两种不同语法的独立语言。每种语言都有一个独特的用例：
+
+- 使用 SOQL 检索单个对象的记录。
+- 使用 SOSL 跨多个对象搜索字段。SOSL 查询可以搜索对象上的大多数文本字段。
+
+[编写 SOSL 查询 单元 | Salesforce Trailhead](https://trailhead.salesforce.com/zh-CN/content/learn/modules/apex_database/apex_database_sosl)
+
+### 语法
+
+```apex
+FIND 'SearchQuery' [IN SearchGroup] [RETURNING ObjectsAndFields]
+```
+
+*SearchGroup* 是可选的。它表示要搜索的字段范围。如果未指定，则默认搜索范围是所有字段。*SearchGroup* 可以取以下值之一。
+
+- `ALL FIELDS`
+- `NAME FIELDS`
+- `EMAIL FIELDS`
+- `PHONE FIELDS`
+- `SIDEBAR FIELDS`
+
+
+
+# 触发器（trigger）（未完）
+
+[Apex 触发器入门教程 单元 | Salesforce Trailhead](https://trailhead.salesforce.com/zh-CN/content/learn/modules/apex_triggers/apex_triggers_intro)
+
+Apex 触发器使您能够在事件之前或之后对 Salesforce 中的记录执行自定义操作，例如添加、更新或删除。就像数据库系统支持触发器一样，Apex 为管理记录也提供了触发器支持。
+
+触发器定义的语法与类定义的语法不同。触发器定义以 trigger 关键字开头。然后是触发器的名称、触发器关联的 Salesforce 对象以及触发条件。触发器包含以下语法：
+
+```java
+trigger TriggerName on ObjectName (trigger_events) {
+   code_block
+}
+```
+
+要在插入、更新、删除和取消删除操作之前或之后执行触发器，请在逗号分隔列表中指定多个触发器事件。可指定事件（trigger_events）如下：
+
+- `before insert`
+- `before update`
+- `before delete`
+- `after insert`
+- `after update`
+- `after delete`
+- `after undelete`
+
+## 第一次编写
+
+编写一个trigger：
+
+```apex
+trigger HelloWorldTrigger on Account (before insert) {
+    System.debug('触发器开始');
+	System.debug('Hello World!');
+    System.debug('触发器结束');
+}
+```
+
+运行下列**Anonymous** 代码：
+
+```apex
+Account a = new Account(Name='Test Trigger');
+insert a;
+```
+
+日志：
+
+```
+17:07:22.37 (208907128)|USER_DEBUG|[2]|DEBUG|触发器开始
+17:07:22.37 (208926372)|USER_DEBUG|[3]|DEBUG|Hello World!
+17:07:22.37 (208938148)|USER_DEBUG|[4]|DEBUG|触发器结束
+```
+
+## 触发器类型
+
+- Before 触发器通常用于在记录被保存到数据库之前更新或者校验记录值。
+- After 触发器用于访问系统设置的字段值（例如记录的 Id 或者 LastModifiedDate 字段），并影响其他记录中的更改。对触发 *after 触发器*的记录拥有只读权限。
+
+要访问导致触发器触发的记录，请使用上下文变量。例如，**`Trigger.New` 包含插入或更新触发器中插入的所有记录。`Trigger.Old` 提供在更新触发器中更新之前的旧版本 `sObject`，或删除触发器中已删除的 `sObject` 列表。**当插入一条记录或通过 API 或 Apex 批量插入记录时，会触发触发器。因此，诸如 `Trigger.New` 之类的上下文变量只能包含一条或多条记录。您可以遍历 `Trigger.New` 来获取每个独立的 `sObject`。
+
+```apex
+trigger HelloWorldTrigger on Account (before insert) {
+    for(Account a : Trigger.New) {
+        a.Description = 'New description';
+    }   
+}
+```
+
+**触发器执行完毕后，系统保存 before 触发器的触发记录。如果对这些记录执行 DML 语句，则会出现错误。**
+
+### 触发上下文变量
+
+| 变量          | 使用情况                                                     |
+| :------------ | :----------------------------------------------------------- |
+| isExecuting   | 如果 Apex 代码的当前上下文是触发器，而不是 Visualforce 页面、Web 服务或 executeanonymous() API 调用，则返回 true。 |
+| isInsert      | 如果此触发器由于插入操作，并从 Salesforce 用户界面、Apex 或 API 触发，则返回 true。 |
+| isUpdate      | 如果此触发器由于更新操作，并从 Salesforce 用户界面、Apex 或 API 触发，则返回 true。 |
+| isDelete      | 如果此触发器由于删除操作，并从 Salesforce 用户界面、Apex 或 API 触发，则返回 true。 |
+| isBefore      | 如果在保存任何记录之前触发此触发器，则返回 true。            |
+| isAfter       | 如果在保存任何记录之后触发此触发器，则返回 true。            |
+| isUndelete    | 如果在从回收站恢复记录后触发此触发器，则返回 true。从 Salesforce 用户界面、Apex 或 API 执行取消删除操作后，会出现恢复记录的情况。 |
+| new           | 返回 sObject 记录的新版本列表。此 sObject 列表仅在 insert、update 和 undelete 触发器中可用，并且只能在 before 触发器中修改记录。 |
+| newMap        | ID 到 sObject 新版本记录的映射。此映射仅在 before update、after insert、after update 以及 after undelete 触发器中可用。 |
+| old           | 返回 sObject 记录的旧版本列表。此 sObject 列表仅在 update 和 delete 触发器中可用。 |
+| oldMap        | ID 到 sObject 旧版本记录的映射。此映射仅在 update 和 delete 触发器中可用。 |
+| operationType | 返回与当前操作对应的 System.TriggerOperation 类型的枚举。System.TriggerOperation 枚举的可能值包括：BEFORE_INSERT、BEFORE_UPDATE、BEFORE_DELETE、AFTER_INSERT、AFTER_UPDATE、AFTER_DELETE 和 AFTER_UNDELETE。如果您根据不同的触发器类型改变编程逻辑，请考虑使用 switch 语句，该语句具有独特触发器执行枚举状态的不同排列。 |
+| size          | 触发器调用中包含的新旧记录总数。                             |
+
+部分上下文变量返回一个布尔值，以指示触发器是由于更新还是其他事件引起的触发。当触发器组合多个事件时，这些变量有很大的用处。例如：
+
+```apex
+trigger ContextExampleTrigger on Account (before insert, after insert, after delete) {
+    if (Trigger.isInsert) {
+        if (Trigger.isBefore) {
+            // Process before insert
+        } else if (Trigger.isAfter) {
+            // Process after insert
+        }        
+    }
+    else if (Trigger.isDelete) {
+        // Process after delete
+    }
+}
+```
 
 
 
