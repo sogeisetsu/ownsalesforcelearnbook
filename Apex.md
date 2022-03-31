@@ -288,6 +288,251 @@ Apex 列表是一组有序的相同类型的项目。
 
 while 和 do while循环和java一致，不再阐述。
 
+# Apex 基础知识和数据库
+
+这次将会比较深入地讲解基础知识。
+
+**Apex 是不区分大小写的语言**
+
+## 使用 Visual Studio Code
+
+[Make Visual Studio Code Salesforce Ready Unit | Salesforce Trailhead](https://trailhead.salesforce.com/en/content/learn/projects/quickstart-vscode-salesforce/vscode-salesforce-ready#)
+
+## sObject
+
+类似于java中的pijo（Plain Old Java Objects）层。
+
+**每条 Salesforce 记录在插入 Salesforce 之前，都表示为一个 sObject。同样，当从 Salesforce 检索持久化记录时，这些记录将存储在 sObject 变量中。**
+
+以下示例创建了类型为 Account、名称为 Acme 的 sObject 并将其分配给了 `acct` 变量。
+
+```apex
+Account acct = new Account(Name='Acme');
+```
+
+Apex 引用标准或自定义 sObject，字段用它们的唯一 API 名称。
+
+对于**自定义对象和自定义字段，API 名称始终以 `__c` 后缀结尾。对于自定义关系字段，API 名称以 `__r` 后缀结尾。**例如：
+
+- 标签为 Merchandise 的自定义对象的 API 名称为 Merchandise__c。
+- 标签为 Description 的自定义字段的 API 名称为 Description__c。
+- 标签为 Items 的自定义关系字段的 API 名称为 Items__r。
+
+### 创建 sObject 并添加字段
+
+与实例化一个对象的方式没有显著差异。
+
+- 点记法为 sObject 添加字段
+
+  ```apex
+  Account acct = new Account();
+  acct.Name = 'Acme';
+  acct.Phone = '(415)555-1212';
+  acct.NumberOfEmployees = 100;
+  ```
+
+- 构造器填充
+
+  ```apex
+  Account acct = new Account(Name='Acme', Phone='(415)555-1212', NumberOfEmployees=100);
+  ```
+
+在填充的时候，必须先填充必填字段，才能插入新记录。
+
+### 泛型
+
+此泛型并非一般面向对象的编程语言的泛型，而是父类型的继承关系，也就是说`sObject`类是所有`sObject`子类的父类。
+
+当不知道正在处理的 `sObject` 类型方法时，您可以使用泛型 `sObject` 数据类型。
+
+```apex
+sObject sobj1 = new Account(Name='Trailhead');
+sObject sobj2 = new Book__c(Name='Workbook 1');
+```
+
+**特定 sObject 类型支持使用点记法访问字段，而泛型 sObject 却不支持。**由于 **`sObject` 是所有特定 `sObject` 类型的父类型**，因此您可以将泛型 sObject 转换为特定 sObject。
+
+```apex
+// Cast a generic sObject to an Account
+Account acct = (Account)myGenericSObject;
+// Now, you can use the dot notation to access fields on Account
+String name = acct.Name;
+String phone = acct.Phone;
+```
+
+**只能通过 `put()` 和 `get()` 方法访问泛型 sObject 的字段。**
+
+## 通过 DML 操作记录
+
+[通过 DML 操作记录 单元 | Salesforce Trailhead](https://trailhead.salesforce.com/zh-CN/content/learn/modules/apex_database/apex_database_dml)
+
+使用 Data Manipulation Language（简称 DML）在 Salesforce 中创建和修改记录。DML 提供简单语句用于插入、更新、合并、删除和恢复记录操作，方便您以简单直接的方式来管理记录。
+
+类似于SSM的Mybatis或者java的jdbc。
+
+此示例将 Acme 客户添加到 Salesforce。首先创建一个客户 sObject，然后将其作为参数传递给 insertstatement，insertstatement 会将记录保留在 Salesforce 中。
+
+```apex
+// Create the account sObject 
+Account acct = new Account(Name='Acme', Phone='(415)555-1212', NumberOfEmployees=100);
+// Insert the account by using DML
+insert acct;
+```
+
+**每个 DML 语句接受单个 sObject 或 sObject 的列表（或数组）。**每个 Apex 事务有 150 条语句的 DML 限制，对 sObject 列表执行 DML 操作算作一个 DML 语句，而不是每个 sObject 一个语句。**对 sObject 列表进行操作是处理记录更有效的方法。**
+
+以下是可用的 DML 语句。
+
+- `insert`
+- `update`
+- `upsert`
+- `delete`
+- `undelete`
+- `merge`
+
+通过 `upsert` DML 操作在单个语句中创建新记录并更新 sObject 记录，使用指定字段来确定现有对象的存在，如果没有指定字段，则使用 ID 字段。也就是说如果比对的字段值已经存在就`update`，若不存在就`insert`，若存在多个，就报错。
+
+- 如果主键不匹配，则创建新对象记录。
+- 如果主键匹配一次，则更新已有对象记录。
+- 如果主键匹配多次，则会产生错误，并且不插入也不更新对象记录。
+
+使用的方式如下：
+
+- `upsert sObject | sObject[]  field`
+
+- `upsert sObject | sObject[]`
+
+可选字段是字段令牌。例如，要指定 MyExternalID 字段，语句是：
+
+```apex
+upsert sObjectList Account.Fields.MyExternalId;
+```
+
+`Merge` 语句将最多三个相同 sObject 类型的记录合并到其中一个记录中，同时删除其他记录，并重新设置关联记录的父级。
+
+### **自动分配给新记录的 ID 字段**
+
+插入记录时，系统会为每条记录分配一个 ID。除了将 ID 值保留在数据库之外，ID 值还会自动填充到您在 DML 调用中用作参数的 sObject 变量上。
+
+sObject 变量包含 DML 调用后的 ID，您可以重用 sObject 变量来执行其他 DML 操作，例如更新操作，**因为系统能够通过匹配 ID 的方式将 sObject 变量映射到其对应的记录上。**
+
+您可以从数据库中检索记录以获取其字段，包括 ID 字段，**但这不能通过 DML 来完成。需要使用 SOQL 编写查询语句**。
+
+### 删除记录
+
+通过 `delete` 语句删除永久记录。已删除的记录不会从 Lightning 平台永久删除，而是在回收站中保存 15 天，您可以从回收站中恢复记录。
+
+### 异常
+
+如果 DML 操作失败，将返回 `DmlException` 类型的异常。您可以在代码中捕获异常以处理错误情况。
+
+```apex
+try {
+    // This causes an exception because 
+    //   the required Name field is not provided.
+    Account acct = new Account();
+    // Insert the account 
+    insert acct;
+} catch (DmlException e) {
+    System.debug('A DML exception has occurred: ' +
+                e.getMessage());
+}
+```
+
+### 数据库方法
+
+Apex 包含了内置的数据库类，该类提供执行 DML 操作和镜像 DML 语句对应项的方法。
+
+数据库方法是**静态的，并在类名上调用。**
+
+- `Database.insert()`
+- `Database.update()`
+- `Database.upsert()`
+- `Database.delete()`
+- `Database.undelete()`
+- `Database.merge()`
+
+数据库方法返回包含每个记录的成功或失败信息的结果对象。
+
+**`insert` 和 `update` 操作都会返回 `Database.SaveResult` 对象数组。`upsert` 操作返回 `Database.UpsertResult` 对象，delete 操作返回 `Database.DeleteResult` 对象。**
+
+[Database Class | Apex Developer Guide | Salesforce Developers](https://developer.salesforce.com/docs/atlas.en-us.224.0.apexcode.meta/apexcode/apex_methods_system_database.htm)
+
+数据库方法有两个好处
+
+- 一个是数据库方法有一个可选的 allOrNone 参数（默认为true），它允许您指定操作是否可以部分成功。当该参数设置为 `false` 时，如果部分记录集发生错误，将提交成功的记录，并为失败的记录返回错误。另外，部分成功选项不会抛出异常。
+- 另一个是可以记录错误信息
+
+```apex
+/*
+
+To pass this challenge, create an Apex class that inserts a new account named after 
+an incoming parameter. If the account is successfully inserted, the method should 
+return the account record. If a DML exception occurs, the method should return null.
+ */
+
+public class AccountHandler {
+    // 参数是客户名称
+    public static Account insertNewAccount(String name){
+        Account a= new Account(Name=name);
+        // allOrNone参数为false,不会抛出错误,会记录错误类型
+        Database.SaveResult result= Database.insert(a,false);
+        if(result.isSuccess()){
+            // 插入记录时，系统会为每条记录分配一个 ID
+            System.debug(a.Id);
+            return a;
+        }else{
+            System.debug(result.getErrors().size());
+            for(Database.Error error:result.getErrors()){
+                System.debug('影响的字段'+error.getFields());
+                System.debug('错误消息'+error.getMessage());
+            }
+            return null;
+        }
+    }
+}
+
+```
+
+### 处理相关记录
+
+可以通过为一个记录指定相关联的外键ID来指定相关记录，但是如果更新相关记录需要执行单独调用 DML 操作。
+
+```apex
+// Query for the contact, which has been associated with an account.
+Contact queriedContact = [SELECT Account.Name 
+                          FROM Contact 
+                          WHERE FirstName = 'Mario' AND LastName='Ruiz'
+                          LIMIT 1];
+// Update the contact's phone number
+queriedContact.Phone = '(415)555-1213';
+// Update the related account industry
+queriedContact.Account.Industry = 'Technology';
+// Make two separate calls 
+// 1. This call is to update the contact's phone.
+update queriedContact;
+// 2. This call is to update the related account's Industry field.
+update queriedContact.Account; 
+```
+
+`Delete` 操作支持级联删除。在每条子记录都允许删除的情况下删除父对象，其子对象也会自动删除。
+
+## SOQL
+
+从数据库中检索记录以获取其字段，包括 ID 字段，**但这不能通过 DML 来完成。需要使用 SOQL 编写查询语句**。
+
+SOQL与常规的mysql基本一致。
+
+与其他 SQL 语言不同，您不能为所有字段指定 *。您必须指定想要明确获取的每个字段。如果您尝试访问 SELECT 子句中未指定的字段，则会出现错误，原因是未检索到该字段。
+
+您不需要在查询中指定 Id 字段，因为无论是否在查询中指定 Id 字段，它都会在 Apex 查询中返回。例如：`SELECT Id,Phone FROM Account` 和 `SELECT Phone FROM Account` 是等效的语句。如果 Id 字段是您要检索的唯一字段，那么您可能需要指定该字段，因为必须至少列出一个字段：`SELECT Id FROM Account`。在查询编辑器中运行查询时，您可能也需要指定 Id 字段，如果不指定，Id 字段将不会在查询结果中显示。
+
+字符串比较不区分大小写。
+
+## SOSL
+
+
+
 # License
 
 本文已将所有引用其他文章之内容清楚明白地标注，其他部分皆为作者劳动成果。对作者劳动成果做以下声明：
@@ -297,4 +542,3 @@ copyright © 2021 苏月晟，版权所有。
 [![知识共享许可协议](https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png)](http://creativecommons.org/licenses/by-nc-sa/4.0/)
 本作品由苏月晟采用[知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议](http://creativecommons.org/licenses/by-nc-sa/4.0/)进行许可。不可以商业目的转载和引用此文章，在非商业转载时请注明来源和作者信息，并采用相同的许可协议。如需商业转载需联系作者并取得作者本人同意。
 
-``
