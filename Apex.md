@@ -379,7 +379,7 @@ Account acct = new Account(Name='Acme', Phone='(415)555-1212', NumberOfEmployees
 insert acct;
 ```
 
-**每个 DML 语句接受单个 sObject 或 sObject 的列表（或数组）。**每个 Apex 事务有 150 条语句的 DML 限制，对 sObject 列表执行 DML 操作算作一个 DML 语句，而不是每个 sObject 一个语句。**对 sObject 列表进行操作是处理记录更有效的方法。**
+**每个 DML 语句接受单个 sObject 或 sObject 的列表（或数组）。**每个 Apex 事务有 **150** 条语句的 DML 限制，对 sObject 列表执行 DML 操作算作一个 DML 语句，而不是每个 sObject 一个语句。**对 sObject 列表进行操作是处理记录更有效的方法。**
 
 以下是可用的 DML 语句。
 
@@ -550,6 +550,8 @@ SOQL 和 SOSL 是两种不同语法的独立语言。每种语言都有一个独
 FIND 'SearchQuery' [IN SearchGroup] [RETURNING ObjectsAndFields]
 ```
 
+*SearchQuery* 表示要搜索的文本（单个单词或短语）。搜索词可以与逻辑运算符（AND、OR）和括号组合。此外，搜索词可以包含通配符（`*`、`?`）。通配符 `*` 在搜索词的中间或结尾匹配零个或多个字符。通配符 `?` 只匹配搜索词中间或结尾的一个字符。
+
 *SearchGroup* 是可选的。它表示要搜索的字段范围。如果未指定，则默认搜索范围是所有字段。*SearchGroup* 可以取以下值之一。
 
 - `ALL FIELDS`
@@ -626,7 +628,7 @@ trigger HelloWorldTrigger on Account (before insert) {
 }
 ```
 
-**触发器执行完毕后，系统保存 before 触发器的触发记录。如果对这些记录执行 DML 语句，则会出现错误。**
+**触发器执行完毕后，系统保存 `before` 触发器的触发记录。如果对这些记录执行 DML 语句，则会出现错误。**
 
 ### 触发上下文变量
 
@@ -662,6 +664,143 @@ trigger ContextExampleTrigger on Account (before insert, after insert, after del
     }
 }
 ```
+
+## 批量触发
+
+[批量 Apex 触发器 单元 | Salesforce Trailhead](https://trailhead.salesforce.com/zh-CN/content/learn/modules/apex_triggers/apex_triggers_bulk)
+
+总是会需要一些对记录集进行整体操作。
+
+salesforce是有查询限制的：
+
+- 每个 Apex 事务有 **150** 条语句的 DML 限制
+- 同步 Apex 为 100 个 SOQL 查询，异步 Apex 为 200 个。
+
+为了更好使用触发器，有下面几种方式：
+
+- 对记录集进行for循环，原因是要对完整记录集起作用
+
+  ```apex
+  trigger MyTriggerBulk on Account(before insert) {
+      for(Account a : Trigger.New) {
+          a.Description = 'New description';
+      }
+  }
+  ```
+
+- 执行批量 SOQL,防止大量的循环进行soql操作
+
+  - 通过一步查询获取记录
+
+    ```apex
+    trigger SoqlTriggerBulk on Account(after update) {  
+        // Perform SOQL query once.    
+        // Get the accounts and their related opportunities.
+        List<Account> acctsWithOpps = 
+            [SELECT Id,(SELECT Id,Name,CloseDate FROM Opportunities) 
+             FROM Account WHERE Id IN :Trigger.New];
+      
+        // Iterate over the returned accounts    
+        for(Account a : acctsWithOpps) { 
+            Opportunity[] relatedOpps = a.Opportunities;  
+            // Do some other processing
+        }
+    }
+    ```
+
+  - SOQL for 循环(推荐)，既防止soql查询限制，又代码整洁
+
+    ```apex
+    trigger SoqlTriggerBulk on Account(after update) {  
+        // Perform SOQL query once.    
+        // Get the related opportunities for the accounts in this trigger,
+        // and iterate over those records.
+        for(Opportunity opp : [SELECT Id,Name,CloseDate FROM Opportunity
+            WHERE AccountId IN :Trigger.New]) {
+      
+            // Do some other processing
+        }
+    }
+    ```
+
+- 批量DML
+
+  ```apex
+  trigger AddRelatedRecord on Account(after insert, after update) {
+      List<Opportunity> oppList = new List<Opportunity>();
+      
+      // Add an opportunity for each account if it doesn't already have one.
+      // Iterate over accounts that are in this trigger but that don't have opportunities.
+      for (Account a : [SELECT Id,Name FROM Account
+                       WHERE Id IN :Trigger.New AND
+                       Id NOT IN (SELECT AccountId FROM Opportunity)]) {
+          // Add a default opportunity for this account
+          oppList.add(new Opportunity(Name=a.Name + ' Opportunity',
+                                     StageName='Prospecting',
+                                     CloseDate=System.today().addMonths(1),
+                                     AccountId=a.Id)); 
+      }
+      
+      if (oppList.size() > 0) {
+          insert oppList;
+      }
+  }
+  ```
+
+  
+
+  # Asynchronous Apex（异步APEX）
+
+  
+
+Asynchronous 发音：[eɪˈsɪŋkrənəs]
+
+## 简介
+
+简而言之，异步 Apex 用于稍后在单独的线程中运行进程。
+
+An asynchronous process is a process or function that executes a task "**in the background**" without the user having to wait for the task to finish.
+
+有以下特点：
+
+- 效率
+
+  无需等待就可以进行下一个进程，可以在做其他事情的同时等待完成，而不是等着上一个进程完成浪费时间。
+
+- 可扩展性
+
+  通过允许平台的某些功能在未来某个时间资源可用时执行，可以快速管理和扩展资源。这允许平台使用并行处理来处理更多作业。
+
+- 更高的limit
+
+  异步进程在新线程中启动，具有更高的调控器和执行限制。
+
+异步 Apex 有多种不同的风格。我们将很快详细介绍每一个，但这里是一个高级概述。
+
+| 类型           | 概述                                                         | 常见场景                            |
+| :------------- | :----------------------------------------------------------- | :---------------------------------- |
+| Future Methods | 在自己的线程中运行，并且**在资源可用之前不要启动**。         | Web 服务标注。                      |
+| Batch Apex     | 运行超出正常处理限制的大型作业。                             | 数据清理或记录归档。                |
+| Queueable Apex | 类似于Future Methods，但提供额外的作业链接并允许使用更复杂的数据类型。 | 使用外部 Web 服务执行顺序处理操作。 |
+| Scheduled Apex | 安排 Apex 在指定时间运行。                                   | 每日或每周任务。                    |
+
+这些不同类型的异步操作并不相互排斥。 For instance, a common pattern is to kick off a Batch Apex job from a Scheduled Apex job.
+
+处理异步请求有下面三个过程：
+
+**入队**（**Enqueue**）
+
+请求被放入队列。这可能是 Apex 批处理请求、未来 Apex 请求或许多其他请求之一。该平台将请求与适当的数据一起排队以处理该请求。
+
+**持久性**（**Persistence**）
+
+排队的请求被保留。请求存储在持久存储中，用于故障恢复并提供事务功能。
+
+**出队**（**Dequeue**）
+
+入队的请求将从队列中移除并进行处理。如果处理失败，事务控制确保请求不会丢失。
+
+异步处理的优先级低于通过浏览器和 API 实现的实时交互，不能保证处理时间，但总会完成。
 
 
 
