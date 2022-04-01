@@ -800,6 +800,30 @@ An asynchronous process is a process or function that executes a task "**in the 
 
 **异步处理的优先级低于通过浏览器和 API 实现的实时交互，不能保证处理时间，但总会完成。**
 
+## Future Apex
+
+Future Apex is used to run processes in a separate thread, at a later time when system resources become available.
+
+Future Methods 的本质是用@future 注解标识的方法。
+
+### 语法
+
+未来的方法必须是**静态方法**，并且只能返回一个 **`void` 类型**。指定的**参数必须是基础数据类型、基础数据类型数组或基础数据类型集合**。值得注意的是，未来的方法不能使用标准或自定义对象作为参数。**一个常见的模式是向方法传递一个要异步处理的记录 id 列表**。
+
+```apex
+public class SomeClass {
+  @future
+  public static void someFutureMethod(List<Id> recordIds) {
+    List<Account> accounts = [Select Id, Name from Account Where Id IN :recordIds];
+    // process account records to do awesome stuff
+  }
+}
+```
+
+**future methods不能保证按照它们被调用的顺序执行。**当使用 future methods时，两个 future methods也可能同时运行，如果这两个方法更新同一条记录，这可能会导致记录锁定和令人讨厌的运行时错误。
+
+考虑使用 Batch Apex 而不是future methods来异步处理大量记录。这比为每条记录创建future请求更有效。
+
 
 
 # License
