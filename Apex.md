@@ -824,6 +824,8 @@ public class SomeClass {
 
 考虑使用 Batch Apex 而不是future methods来异步处理大量记录。这比为每条记录创建future请求更有效。
 
+# 测试
+
 
 
 # License
