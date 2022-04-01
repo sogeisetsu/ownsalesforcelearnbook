@@ -749,9 +749,7 @@ salesforce是有查询限制的：
 
   
 
-  # Asynchronous Apex（异步APEX）
-
-  
+# Asynchronous Apex（异步APEX）
 
 Asynchronous 发音：[eɪˈsɪŋkrənəs]
 
@@ -800,7 +798,7 @@ An asynchronous process is a process or function that executes a task "**in the 
 
 入队的请求将从队列中移除并进行处理。如果处理失败，事务控制确保请求不会丢失。
 
-异步处理的优先级低于通过浏览器和 API 实现的实时交互，不能保证处理时间，但总会完成。
+**异步处理的优先级低于通过浏览器和 API 实现的实时交互，不能保证处理时间，但总会完成。**
 
 
 
