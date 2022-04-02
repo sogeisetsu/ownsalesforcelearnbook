@@ -665,6 +665,29 @@ trigger ContextExampleTrigger on Account (before insert, after insert, after del
 }
 ```
 
+### 使用触发器异常
+
+您有时需要对某些数据库操作添加限制，例如在满足某些条件时防止保存记录。要防止在触发器中保存记录，请对相关 sObject 调用 addError() 方法。addError() 方法在触发器内部抛出一个致命错误。用户界面将显示并记录该错误提示。
+
+```apex
+trigger AccountDeletion on Account (before delete) {
+   
+    // Prevent the deletion of accounts if they have related opportunities.
+    for (Account a : [SELECT Id FROM Account
+                     WHERE Id IN (SELECT AccountId FROM Opportunity) AND
+                     Id IN :Trigger.old]) {
+        Trigger.oldMap.get(a.Id).addError(
+            'Cannot delete account with related opportunities.');
+    }
+    
+}
+```
+
+除非批量 DML 调用时部分成功，否则**在触发器中调用 addError() 会导致整个操作集回滚。**
+
+- 如果 Apex 中的 DML 语句生成了触发器，则任何错误都会回滚整个操作。但是，运行时引擎仍会处理操作中的每条记录以编译完整的错误列表。
+- 如果 Lightning 平台 API 中的批量 DML 调用生成了触发器，则运行时引擎会将不良记录放在一边。然后，运行时引擎尝试保存部分未生成错误的记录。
+
 ## 禁用触发器
 
 假设有一个触发器名为`AccountDeletion`，禁用该触发器方法如下：
@@ -690,7 +713,7 @@ trigger ContextExampleTrigger on Account (before insert, after insert, after del
    </ApexTrigger>
    ```
 
-3. 如果需要的话，在`sfdx-project.json`文件的`packageDirectories`节点加入trigger所在的文件夹（一般是triggers）
+3. 如果需要的话（一般情况下不会需要），在`sfdx-project.json`文件的`packageDirectories`节点加入trigger所在的文件夹（**一般是triggers文件夹已经包含在force-app文件夹里，所以不用单独设置**）
 
 4. 在triggers文件夹右键点击deploy source to org。
 
