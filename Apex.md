@@ -665,6 +665,15 @@ trigger ContextExampleTrigger on Account (before insert, after insert, after del
 }
 ```
 
+## 禁用触发器
+
+假设有一个触发器名为`AccountDeletion`，禁用该触发器方法如下：
+
+1. 在 Setup（设置）中，搜索 Apex Triggers（Apex 触发器）。
+2. 在 Apex Triggers（Apex 触发器）页面中，单击 AccountDeletion 触发器旁边的 **Edit（编辑）**。
+3. 取消选择 **Is Active（有效）**。
+4. 单击**保存**。
+
 ## 批量触发
 
 [批量 Apex 触发器 单元 | Salesforce Trailhead](https://trailhead.salesforce.com/zh-CN/content/learn/modules/apex_triggers/apex_triggers_bulk)
@@ -825,6 +834,46 @@ public class SomeClass {
 考虑使用 Batch Apex 而不是future methods来异步处理大量记录。这比为每条记录创建future请求更有效。
 
 # 测试
+
+在您为 Lightning 平台 AppExchange 部署或打包代码之前，必须测试至少 75% 的 Apex 代码，并且所有这些测试都必须通过。
+
+测试类和方法使用 isTest 注释定义，语义如下：
+
+```apex
+@isTest
+private class MyTestClass {
+    @isTest static void myTest() {
+        // code_block
+    }
+}
+```
+
+**测试类可以是专用或公用。**如果您仅将测试类用于单元测试，请将其声明为专用。公用测试类通常用于测试数据工厂类，稍后会介绍。
+
+测试方法的可见性并不重要，因此将测试方法声明为公用或专用没有区别，因为测试框架始终能够访问测试方法。基于这个原因，语法中省略了访问修饰符。
+
+**在测试方法中创建的 Salesforce 记录不会提交到数据库。**测试执行完成后，回滚 Salesforce 记录。回滚行为对测试而言很方便，原因是您不必在测试执行后清理测试数据。
+
+默认情况下，**Apex 测试除拥有访问设置和元数据对象（例如用户或配置文件对象）权限以外，无权访问组织中预先存在的数据。**
+
+有时测试方法需要访问预先存在的数据。要**访问组织数据，可以使用 `@isTest(SeeAllData=true)` 注释测试方法。**
+
+```apex
+@isTest
+private class TestVerifyDate{
+    @isTest static void in30Days(){
+        Date d1 = Date.newInstance(2022, 3, 1);
+        Date d2 = d1.addDays(2);
+        VerifyDate.CheckDates(d1, d2);
+    }
+
+    @isTest static void over30Days(){
+        Date d1 = Date.newInstance(2022, 3, 1);
+        Date d2 = d1.addDays(31);
+        VerifyDate.CheckDates(d1, d2);
+    }
+}
+```
 
 
 
