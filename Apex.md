@@ -674,6 +674,26 @@ trigger ContextExampleTrigger on Account (before insert, after insert, after del
 3. 取消选择 **Is Active（有效）**。
 4. 单击**保存**。
 
+### 借助vscode
+
+[Disable a Salesforce Trigger in Production with VS Code - Spinning Code](https://spinningcode.org/2022/02/disable-a-salesforce-trigger-in-production-with-vs-code/)
+
+1. 首先，默认vscode中有一个salesforce project并且连接正常。
+
+2. 将需要禁用的trigger所属的xml文件的`status`更改为`Inactive`（**Update the trigger’s XML file to change the status**. All project code files in SFDX are accompanied by an XML file of class metadata. Open the file and change the status to “Inactive”.）
+
+   ```xml
+   <?xml version='1.0' encoding='UTF-8'?>
+   <ApexTrigger xmlns="http://soap.sforce.com/2006/04/metadata">
+     <apiVersion>54.0</apiVersion>
+     <status>Inactive</status>
+   </ApexTrigger>
+   ```
+
+3. 如果需要的话，在`sfdx-project.json`文件的`packageDirectories`节点加入trigger所在的文件夹（一般是triggers）
+
+4. 在triggers文件夹右键点击deploy source to org。
+
 ## 批量触发
 
 [批量 Apex 触发器 单元 | Salesforce Trailhead](https://trailhead.salesforce.com/zh-CN/content/learn/modules/apex_triggers/apex_triggers_bulk)
