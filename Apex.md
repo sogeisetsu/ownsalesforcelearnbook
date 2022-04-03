@@ -895,12 +895,6 @@ private class MyTestClass {
 
 测试方法的可见性并不重要，因此将测试方法声明为公用或专用没有区别，因为测试框架始终能够访问测试方法。基于这个原因，语法中省略了访问修饰符。
 
-**在测试方法中创建的 Salesforce 记录不会提交到数据库。**测试执行完成后，回滚 Salesforce 记录。回滚行为对测试而言很方便，原因是您不必在测试执行后清理测试数据。
-
-默认情况下，**Apex 测试除拥有访问设置和元数据对象（例如用户或配置文件对象）权限以外，无权访问组织中预先存在的数据。**
-
-有时测试方法需要访问预先存在的数据。要**访问组织数据，可以使用 `@isTest(SeeAllData=true)` 注释测试方法。**
-
 ```apex
 @isTest
 private class TestVerifyDate{
@@ -914,6 +908,69 @@ private class TestVerifyDate{
         Date d1 = Date.newInstance(2022, 3, 1);
         Date d2 = d1.addDays(31);
         VerifyDate.CheckDates(d1, d2);
+    }
+}
+```
+
+**在测试方法中创建的 Salesforce 记录不会提交到数据库。**测试执行完成后，回滚 Salesforce 记录。回滚行为对测试而言很方便，原因是您不必在测试执行后清理测试数据。
+
+默认情况下，**Apex 测试除拥有访问设置和元数据对象（例如用户或配置文件对象）权限以外，无权访问组织中“预先存在(pre-existing)”的数据。**
+
+> Starting with Apex code saved using Salesforce API version 24.0 and later, test methods don’t have access by default to pre-existing data in the organization, such as **standard objects, custom objects, and custom settings data**, and **can only access data that they create.** However, objects that are used to manage your organization or metadata objects can still be accessed in your tests.
+>
+> ---
+>
+> 也就是说，虽然不能访问standard objects，但是可以访问自己创建的数据。比如说在测试中无法访问某个已经存在的Account object的record，但是自己可以创建一个新的Account object的record，然后访问它。
+
+ 
+
+有时测试方法需要访问预先存在的数据。要访问组织数据，可以使用 `@isTest(SeeAllData=true)` 注释测试方法。
+
+## 建立数据和测试数据分离
+
+可以使用`Test.startTest()`和`Test.stopTest()`来将测试过程中建立数据和测试数据分离。
+
+**为什么要建立数据和测试数据分离？**
+
+首先必须了解一件事情就是在一个事务中，salesforce对数据库操作是有限制的：
+
+- 每个 Apex 事务有 **150** 条语句的 DML 限制
+- 同步 Apex 为 100 个 SOQL 查询，异步 Apex 为 200 个。
+
+有可能在测试过程中就已经接近达到了salesforce的限制，所以就无法验证要测试的代码是否接近了salesforce的限制。
+
+salesforce在`Test.startTest()`和`Test.stopTest()`之间的代码分配了一个全新的调速器限制，也就是说如果在在`Test.startTest()`之前浪费了99条DML语句，那么在`Test.startTest()`和`Test.stopTest()`之间是全新的150个DML语句限制，在`Test.stopTest()`之后，数据库限制将会继承`Test.startTest()`之前的状况，也就是还剩下*150-99=51*个DML语句可以执行。
+
+还有一个原因就是使用了建立数据和测试数据分离之后，代码会更加规范。
+
+下面是在测试trigger的过程中，使用了`Test.startTest()`和`Test.stopTest()`：
+
+```apex
+// TODO 测试触发器
+@isTest
+private class TestAccountDeletion {
+    @isTest static void TestDeleteAccountWithOneOpportunity() {
+        // Test data setup
+        // Create an account with an opportunity, and then try to delete it
+        Account acct = new Account(Name='Test Account');
+        insert acct;
+        Opportunity opp = new Opportunity(Name=acct.Name + ' Opportunity',
+                                       StageName='Prospecting',
+                                       CloseDate=System.today().addMonths(1),
+                                       AccountId=acct.Id);
+        insert opp;
+        // Perform test
+        Test.startTest();
+        Database.DeleteResult result = Database.delete(acct, false);
+        Test.stopTest();
+        // Verify 
+        // In this case the deletion should have been stopped by the trigger,
+        // so verify that we got back an error.
+        System.assert(!result.isSuccess());
+        System.assert(result.getErrors().size() > 0);
+        System.assertEquals('Cannot delete account with related opportunities.',
+                             result.getErrors()[0].getMessage());
+                             
     }
 }
 ```
