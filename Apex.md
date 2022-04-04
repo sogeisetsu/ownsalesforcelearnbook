@@ -975,7 +975,46 @@ private class TestAccountDeletion {
 }
 ```
 
+## 为 Apex 测试创建测试数据
 
+测试实用程序类包含测试方法可以调用的方法，用来执行实用的任务，例如建立测试数据。
+
+```apex
+// TODO 测试实用程序类包含测试方法可以调用的方法，用来执行实用的任务，例如建立测试数据。
+/*
+    TestDataFactory 类是一种特殊的类 — 它是一个用 isTest 注释的公共类，
+    只能从正在运行的测试中访问。测试实用程序类包含测试方法可以调用的方法，
+    用来执行实用的任务，例如建立测试数据。测试实用程序类不受组织的代码大小限制。
+ */
+@isTest
+// TODO 用来创建测试数据的测试类要用public修饰
+public class TestDataFactory {
+    public static List<Account> createAccountsWithOpps(Integer numAccts, Integer numOppsPerAcct) {
+        List<Account> accts = new List<Account>();
+        for(Integer i=0;i<numAccts;i++) {
+            Account a = new Account(Name='TestAccount' + i);
+            accts.add(a);
+        }
+        insert accts;
+        List<Opportunity> opps = new List<Opportunity>();
+        for (Integer j=0;j<numAccts;j++) {
+            Account acct = accts[j];
+            // For each account just inserted, add opportunities
+            for (Integer k=0;k<numOppsPerAcct;k++) {
+                opps.add(new Opportunity(Name=acct.Name + ' Opportunity ' + k,
+                                       StageName='Prospecting',
+                                       CloseDate=System.today().addMonths(1),
+                                       AccountId=acct.Id));
+            }
+        }
+        // Insert all opportunities for all accounts.
+        insert opps;
+        return accts;
+    }
+}
+```
+
+然后在测试类中调用测试实用程序类来获取测试数据。
 
 # License
 
