@@ -412,7 +412,7 @@ upsert sObjectList Account.Fields.MyExternalId;
 
 ### **自动分配给新记录的 ID 字段**
 
-插入记录时，系统会为每条记录分配一个 ID。除了将 ID 值保留在数据库之外，ID 值还会自动填充到您在 DML 调用中用作参数的 sObject 变量上。
+**插入记录时，系统会为每条记录分配一个 ID。除了将 ID 值保留在数据库之外，ID 值还会自动填充到您在 DML 调用中用作参数的 sObject 变量上。**
 
 sObject 变量包含 DML 调用后的 ID，您可以重用 sObject 变量来执行其他 DML 操作，例如更新操作，**因为系统能够通过匹配 ID 的方式将 sObject 变量映射到其对应的记录上。**
 
@@ -530,6 +530,9 @@ SOQL与常规的mysql基本一致。
 您不需要在查询中指定 Id 字段，因为无论是否在查询中指定 Id 字段，它都会在 Apex 查询中返回。例如：`SELECT Id,Phone FROM Account` 和 `SELECT Phone FROM Account` 是等效的语句。如果 Id 字段是您要检索的唯一字段，那么您可能需要指定该字段，因为必须至少列出一个字段：`SELECT Id FROM Account`。在查询编辑器中运行查询时，您可能也需要指定 Id 字段，如果不指定，Id 字段将不会在查询结果中显示。
 
 字符串比较不区分大小写。
+
+- **同步 Apex 为 100 个 SOQL 查询，异步 Apex 为 200 个。**
+- **每次查询最多查询200个记录**
 
 ## SOSL（未完）
 
@@ -876,6 +879,14 @@ public class SomeClass {
 
 考虑使用 Batch Apex 而不是future methods来异步处理大量记录。这比为每条记录创建future请求更有效。
 
+## Batch Apex
+
+Batch Apex 用于运行超出正常处理限制的大型作业（想想数千或数百万条记录！）。使用 Batch Apex，可以批量异步处理记录（因此得名“Batch Apex”）以保持在平台限制内。
+
+![](https://suyuesheng-biaozhun-blog-tupian.oss-cn-qingdao.aliyuncs.com/blogimg/20220405145307.png)
+
+
+
 # 测试
 
 在您为 Lightning 平台 AppExchange 部署或打包代码之前，必须测试至少 75% 的 Apex 代码，并且所有这些测试都必须通过。
@@ -920,7 +931,7 @@ private class TestVerifyDate{
 >
 > ---
 >
-> 也就是说，虽然不能访问standard objects，但是可以访问自己创建的数据。比如说在测试中无法访问某个已经存在的Account object的record，但是自己可以创建一个新的Account object的record，然后访问它。
+> 也就是说，**虽然不能访问standard objects，但是可以访问自己创建的数据。比如说在测试中无法访问某个已经存在的Account object的record，但是自己可以创建一个新的Account object的record，然后访问它。**
 
  
 
