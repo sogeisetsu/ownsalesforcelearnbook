@@ -966,6 +966,91 @@ Queueable Apex 是一个很棒的新工具，但有几点需要注意：
 
 也就是说Queueable Apex的Chaining必须是一条线。
 
+## Scheduled Apex
+
+The Apex Scheduler lets you delay execution so that you can run Apex classes at a specified time. This is ideal for daily or weekly maintenance tasks using Batch Apex. To take advantage of the scheduler, write an Apex class that implements the Schedulable interface, and then schedule it for execution on a specific schedule.
+
+### 语法
+
+要调用 Apex 类以在特定时间运行，首先为该类实现 Schedulable 接口。然后，**使用 `System.schedule` 方法安排类的实例在特定时间运行。**
+
+```apex
+public class SomeClass implements Schedulable {
+    public void execute(SchedulableContext ctx) {
+        // awesome code here
+    }
+}
+```
+
+该方法的参数是一个 SchedulableContext 对象。在计划了一个类之后，将创建一个表示计划作业的 CronTrigger（定时触发） 对象。它提供了一个 getTriggerId 方法，该方法返回 CronTrigger API 对象的 ID。
+
+### 使用 System.Schedule 方法
+
+System.Schedule 方法接受三个参数：作业的名称、用于表示作业计划运行的时间和日期的 CRON 表达式，以及实现 Schedulable 接口的类的实例。
+
+```apex
+RemindOpptyOwners reminder = new RemindOpptyOwners();
+// Seconds Minutes Hours Day_of_month Month Day_of_week optional_year
+String sch = '20 30 8 10 2 ?';
+String jobID = System.schedule('Remind Opp Owners', sch, reminder);
+```
+
+#### 用于表示作业时间和日期的表达式
+
+语法如下：
+
+```apex
+Seconds Minutes Hours Day_of_month Month Day_of_week Optional_year
+```
+
+```apex
+秒 分 时 月的某一天 月 周的某一天 年（可选）
+```
+
+以下是表达式的值：
+
+| Name          | Values                                                       | Special Characters |
+| :------------ | :----------------------------------------------------------- | :----------------- |
+| Seconds       | 0–59                                                         | None               |
+| Minutes       | 0–59                                                         | None               |
+| Hours         | 0–23                                                         | None               |
+| Day_of_month  | 1–31                                                         | `, - * ? / L W`    |
+| Month         | 1–12 or the following:`JAN`、`FEB`、`MAR`、`APR`、`MAY`、`JUN`、`JUL`、`AUG`、`SEP`、`OCT`、`NOV`、`DEC`。 | `, - * /`          |
+| Day_of_week   | 1–7 or the following:SUN、MON、TUE、WED、THU、FRI、SAT（注意每周的第一天是周日） | `, - * ? / L #`    |
+| optional_year | null or 1970–2099                                            | `, - * /`          |
+
+The special characters are defined as follows:
+
+| Special Character | Description                                                  |
+| :---------------- | :----------------------------------------------------------- |
+| ,                 | 分隔值。例如，使用`JAN, MAR, APR` 指定超过一个月。           |
+| -                 | 指定范围。例如，使用 `JAN-MAR` 指定超过一个月。              |
+| *                 | 指定所有值。例如，如果将 Month 指定为 `*`，则每月安排作业。  |
+| ?                 | 不指定具体值。这仅适用于 Day_of_month 和 Day_of_week，通常用于指定一个值而不是另一个值时。 |
+| /                 | 指定增量。斜线前的数字指定间隔的开始时间，斜线后的数字是间隔量。例如，如果您为 Day_of_month 指定 `1/5`，则 Apex 类从每月的第一天开始每五天运行一次。 |
+| L                 | 指定范围的结尾（最后一个）。这仅适用于 Day_of_month 和 Day_of_week。与 Day of month 一起使用时，L 始终表示该月的最后一天，例如 1 月 31 日，闰年的 2 月 29 日，等等。当单独与 Day_of_week 一起使用时，它始终表示 7 或 SAT。**当与 Day_of_week 值一起使用时，它表示该月中该类型日期的最后一天。**例如，如果您指定 2L，则您指定的是该月的最后一个星期一。不要使用 L 的值范围，因为结果可能出乎意料。 |
+| W                 | 指定给定日期最近的工作日（周一至周五）。这仅适用于 Day_of_month。例如，如果您指定 `20W`，并且 20 日是星期六，则课程将在 19 日进行。如果您指定 `1W`，并且第一个是星期六，则该类不会在上个月运行，而是在第三个，即下一个星期一运行。**一起使用 L 和 W 可以来指定该月的最后一个工作日。** |
+| #                 | 指定月份的第 n 天，格式为 weekday#day_of_month。这仅适用于 Day_of_week。 `#` 前面的数字指定工作日 (SUN-SAT)。 `#` 后面的数字指定月份中的日期。例如，指定 2#2 表示班级在每个月的第二个星期一上课。 |
+
+以下是如何使用表达式的一些示例：
+
+再回顾一遍表示日期的语法：
+
+```apex
+Seconds Minutes Hours Day_of_month Month Day_of_week Optional_year
+```
+
+| Expression         | Description                                         |
+| :----------------- | :-------------------------------------------------- |
+| 0 0 13 * * ?       | Class runs every day at 1 PM.                       |
+| 0 0 22 ? * 6L      | Class runs the last Friday of every month at 10 PM. |
+| 0 0 10 ? * MON-FRI | Class runs Monday through Friday at 10 AM.          |
+| 0 0 20 * * ? 2010  | Class runs every day at 8 PM during the year 2010.  |
+
+### 注意
+
+**您一次只能有 100 个计划的 Apex 作业（You can only have 100 scheduled Apex jobs at one time）也就是说在一个事务或者方法里面schedule apex只能有最多100个**
+
 # 测试
 
 在您为 Lightning 平台 AppExchange 部署或打包代码之前，必须测试至少 75% 的 Apex 代码，并且所有这些测试都必须通过。
@@ -1105,6 +1190,12 @@ public class TestDataFactory {
 ```
 
 然后在测试类中调用测试实用程序类来获取测试数据。
+
+# 限制
+
+[Execution Governors and Limits | Apex Developer Guide | Salesforce Developers](https://developer.salesforce.com/docs/atlas.en-us.224.0.apexcode.meta/apexcode/apex_gov_limits.htm)
+
+
 
 # License
 
