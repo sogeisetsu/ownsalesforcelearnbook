@@ -887,6 +887,85 @@ Batch Apex 用于运行超出正常处理限制的大型作业（想想数千或
 
 
 
+## Queueable 
+
+利用future method的简单性和 Batch Apex 的强大功能，将它们混合在一起形成 Queueable Apex！它提供了平台序列化的类结构、没有start和stop方法的简化接口，**甚至允许使用的不仅仅是原始参数！它由一个简单的 `System.enqueueJob()` 方法调用，该方法返回一个可以监控的作业 ID。**
+
+Queueable Apex allows you to submit jobs for asynchronous processing similar to future methods with the following additional benefits:
+
+- 非原始类型：Queueable 类可以包含非原始数据类型的成员变量，例如 sObjects 或自定义 Apex 类型。作业执行时可以访问这些对象
+- 可监控：the method returns the ID of the AsyncApexJob record.
+- Chaining（链接） jobs: You can chain one job to another job by starting a second job from a running job. Chaining jobs is useful if you need to do some sequential（顺序的） processing.
+
+### 语法
+
+要使用 Queueable Apex，只需实现 Queueable 接口。
+
+```apex
+public class SomeClass implements Queueable {
+    public void execute(QueueableContext context) {
+        // awesome code here
+    }
+}
+```
+
+#### 示例代码
+
+```apex
+public class UpdateParentAccount implements Queueable {
+    private List<Account> accounts;
+    private ID parent;
+    public UpdateParentAccount(List<Account> records, ID id) {
+        this.accounts = records;
+        this.parent = id;
+    }
+    public void execute(QueueableContext context) {
+        for (Account account : accounts) {
+          account.parentId = parent;
+          // perform other processing or callout
+        }
+        update accounts;
+    }
+}
+```
+
+#### 调用
+
+```apex
+// find all accounts in ‘NY’
+List<Account> accounts = [select id from account where billingstate = ‘NY’];
+// find a specific parent account for all records
+Id parentId = [select id from account where name = 'ACME Corp'][0].Id;
+// instantiate a new instance of the Queueable class
+UpdateParentAccount updateJob = new UpdateParentAccount(accounts, parentId);
+// enqueue the job for processing
+ID jobID = System.enqueueJob(updateJob);
+```
+
+### 链接作业
+
+Queueable Apex 的最佳功能之一是作业链接。要将作业链接到另一个作业，从可排队类的 execute() 方法提交第二个作业。只能从正在执行的作业中添加一个作业，这意味着每个父作业只能存在一个子作业。例如，如果您有一个名为 SecondJob 的第二个类实现了 Queueable 接口，可以在 execute() 方法中将该类添加到队列中，如下所示：
+
+```apex
+public class FirstJob implements Queueable {
+    public void execute(QueueableContext context) {
+        // Awesome processing logic here
+        // Chain this job to next job by submitting the next job
+        System.enqueueJob(new SecondJob());
+    }
+}
+```
+
+### 要记住的事情
+
+Queueable Apex 是一个很棒的新工具，但有几点需要注意：
+
+- 您可以在**单个事务**中使用 System.enqueueJob 将多达 50 个作业添加到队列中。
+- 链接作业时，您可以使用 System.enqueueJob 从正在执行的作业中添加一个作业，这意味着每个父队列作业只能存在一个子作业。从同一个可排队作业启动多个子作业是不允许的。
+- 对链接作业的深度没有限制，这意味着您可以将一个作业链接到另一个作业，并对每个新的子作业重复此过程以将其链接到新的子作业。但是，对于 Developer Edition 和 Trial 组织，链接作业的最大堆栈深度为 5，这意味着您可以链接作业四次，并且链中的最大作业数为 5，包括初始父队列作业。
+
+也就是说Queueable Apex的Chaining必须是一条线。
+
 # 测试
 
 在您为 Lightning 平台 AppExchange 部署或打包代码之前，必须测试至少 75% 的 Apex 代码，并且所有这些测试都必须通过。
