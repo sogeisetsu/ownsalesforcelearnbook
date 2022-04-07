@@ -1051,6 +1051,12 @@ Seconds Minutes Hours Day_of_month Month Day_of_week Optional_year
 
 **您一次只能有 100 个计划的 Apex 作业（You can only have 100 scheduled Apex jobs at one time）也就是说在一个事务或者方法里面schedule apex只能有最多100个**
 
+## 监控 Asynchronous Apex
+
+
+
+
+
 # 测试
 
 在您为 Lightning 平台 AppExchange 部署或打包代码之前，必须测试至少 75% 的 Apex 代码，并且所有这些测试都必须通过。
