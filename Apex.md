@@ -964,7 +964,7 @@ Queueable Apex 是一个很棒的新工具，但有几点需要注意：
 - 链接作业时，您可以使用 System.enqueueJob 从正在执行的作业中添加一个作业，这意味着每个父队列作业只能存在一个子作业。从同一个可排队作业启动多个子作业是不允许的。
 - 对链接作业的深度没有限制，这意味着您可以将一个作业链接到另一个作业，并对每个新的子作业重复此过程以将其链接到新的子作业。但是，对于 Developer Edition 和 Trial 组织，链接作业的最大堆栈深度为 5，这意味着您可以链接作业四次，并且链中的最大作业数为 5，包括初始父队列作业。
 
-也就是说Queueable Apex的Chaining必须是一条线。
+**也就是说Queueable Apex的Chaining必须是一条线。**
 
 ## Scheduled Apex
 
@@ -986,7 +986,7 @@ public class SomeClass implements Schedulable {
 
 ### 使用 System.Schedule 方法
 
-System.Schedule 方法接受三个参数：作业的名称、用于表示作业计划运行的时间和日期的 CRON 表达式，以及实现 Schedulable 接口的类的实例。
+`System.Schedule` 方法接受三个参数：作业的名称、用于表示作业计划运行的时间和日期的 CRON 表达式，以及实现 Schedulable 接口的类的实例。
 
 ```apex
 RemindOpptyOwners reminder = new RemindOpptyOwners();
@@ -994,6 +994,10 @@ RemindOpptyOwners reminder = new RemindOpptyOwners();
 String sch = '20 30 8 10 2 ?';
 String jobID = System.schedule('Remind Opp Owners', sch, reminder);
 ```
+
+`System.Schedule`返回**CronTrigger ID**，要停止执行已安排的作业，请使用 System.abortJob 方法，参数为 `SchedulableContext`的`getTriggerID` 方法或者`System.Schedule`返回的 ID。
+
+[CronTrigger | Object Reference for Salesforce and Lightning Platform | Salesforce Developers](https://developer.salesforce.com/docs/atlas.en-us.224.0.object_reference.meta/object_reference/sforce_api_objects_crontrigger.htm)
 
 #### 用于表示作业时间和日期的表达式
 
@@ -1049,13 +1053,49 @@ Seconds Minutes Hours Day_of_month Month Day_of_week Optional_year
 
 ### 注意
 
-**您一次只能有 100 个计划的 Apex 作业（You can only have 100 scheduled Apex jobs at one time）也就是说在一个事务或者方法里面schedule apex只能有最多100个**
+**您同时只能有 100 个计划的 Apex 作业**
+
+#### 对批处理作业使用 System.scheduleBatch 方法
+
+您可以调用 `System.scheduleBatch` 方法来安排批处理作业在将来的指定时间运行一次。此方法仅适用于批处理类，**不需要实现 `Schedulable` 接口。**这使得为一次执行安排批处理作业变得容易。
 
 ## 监控 Asynchronous Apex
 
+可以在lightning里面查看所有的job，在搜索框输入jobs即可：
 
+![](https://suyuesheng-biaozhun-blog-tupian.oss-cn-qingdao.aliyuncs.com/blogimg/20220408080603.png)
 
+The *Apex Flex Queue* page lists all batch jobs that are in Holding （暂挂）status.
 
+**When batch jobs are submitted, they’re held in the flex queue before the system queues them for processing.**
+
+### 限制
+
+异步总的限制是250,000 或组织中的用户许可证数量乘以 200，以较大者为准。其余的限制可以查阅下面链接
+
+[Execution Governors and Limits | Apex Developer Guide | Salesforce Developers](https://developer.salesforce.com/docs/atlas.en-us.224.0.apexcode.meta/apexcode/apex_gov_limits.htm)
+
+### 区别
+
+|                | 返回ID                                                       | 限制                                                         | 调用方法                                        | 实现接口                      |
+| -------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ----------------------------------------------- | ----------------------------- |
+| future apex    | 不反回ID，但是future job属于AsyncApexJob ，可以在lighting中的 apex jobs页面中查看或者通过soql查询在AsyncApexJob 里面使用字段`MethodName`, or `JobType`, to find your job | 每次 Apex 调用限制为 **50** 个未来调用                       | 直接调用                                        | 无                            |
+| batch jobs     | 返回AsyncApexJob ID                                          | 限制较多，请查阅上面的网址。这里只说一个：Maximum number of batch Apex jobs in the Apex flex queue that are in Holding status is **100** | `System.scheduleBatch`和`Database.executeBatch` | `Database.Batchable<SObject>` |
+| queueable jobs | 返回AsyncApexJob ID                                          | 您可以在**单个事务**中使用 System.enqueueJob 将多达 **50** 个作业添加到队列中。每个父队列作业只能存在**一个**子作业。在 Developer Edition and Trial orgs中连接深度限制为**5**，正常状况下没有此限制。 | `System.enqueueJob`                             | `Queueable`                   |
+| scheduled jobs | 返回CronTrigger ID，通过system.schedule()方法返回string类型  | Maximum number of Apex classes scheduled concurrently is **100**, In Developer Edition orgs, the limit is **5**. | `System.Schedule`                               | `Schedulable`                 |
+
+[AsyncApexJob | SOAP API Developer Guide | Salesforce Developers](https://developer.salesforce.com/docs/atlas.en-us.api.meta/api/sforce_api_objects_asyncapexjob.htm)
+
+[CronTrigger | Object Reference for Salesforce and Lightning Platform | Salesforce Developers](https://developer.salesforce.com/docs/atlas.en-us.224.0.object_reference.meta/object_reference/sforce_api_objects_crontrigger.htm)
+
+为方便查看，将上面表格反转：
+
+|          | future apex                                                  | batch jobs                                                   | queueable jobs                                               | scheduled jobs                                               |
+| -------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 返回ID   | 不反回ID，但是future job属于AsyncApexJob ，可以在lighting中的 apex jobs页面中查看或者通过soql查询在AsyncApexJob 里面使用字段MethodName, or JobType, to find your job | 返回AsyncApexJob ID                                          | 返回AsyncApexJob ID                                          | 返回CronTrigger ID，通过`system.schedule()`方法返回string类型 |
+| 限制     | 每次 Apex 调用限制为 **50** 个未来调用                       | 限制较多，请查阅上面的网址。这里只说一个：Maximum number of batch Apex jobs in the Apex flex queue that are in Holding status is **100** | 您可以在单个事务中使用 System.enqueueJob 将多达 **50** 个作业添加到队列中。每个父队列作业只能存在**一个**子作业。在 Developer Edition and Trial orgs中连接深度限制为**5**，正常状况下**没有此限制**。 | Maximum number of Apex classes scheduled concurrently is **100**, In Developer Edition orgs, the limit is **5**. |
+| 调用方法 | 直接调用                                                     | `System.scheduleBatch`和`Database.executeBatch`              | `System.enqueueJob`                                          | `System.Schedule`                                            |
+| 实现接口 | 无                                                           | `Database.Batchable<SObject>`                                | `Queueable`                                                  | `Schedulable`                                                |
 
 # 测试
 
